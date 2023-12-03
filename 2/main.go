@@ -4,9 +4,26 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
-	"unicode"
 )
+
+type cube_set struct {
+	red_cubes   int
+	green_cubes int
+	blue_cubes  int
+}
+
+type game struct {
+	id   int
+	sets []cube_set
+}
+
+type bag struct {
+	red_cubes   int
+	green_cubes int
+	blue_cubes  int
+}
 
 func check(e error) {
 	if e != nil {
@@ -15,68 +32,89 @@ func check(e error) {
 }
 
 func main() {
+	const total_red_cubes = 12
+	const total_green_cubes = 13
+	const total_blue_cubes = 14
+
+	elf_bag := bag{total_red_cubes, total_green_cubes, total_blue_cubes}
+
 	filename := []string{"./input.txt"}
 
-	file_data := parseFile(filename[:])
+	game_data := parseFile(filename[:])
+	id_sum := 0
 
-	sum := 0
-
-	for i := 0; i < len(file_data); i++ {
-		value := getCalibrateValue(file_data[i])
-		sum += value
-		fmt.Printf("%d: %s\n", value, file_data[i])
-	}
-
-	println(sum)
-}
-
-func getWordDigit(line string) int {
-	number_words := []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
-
-	for i := 0; i < len(number_words); i++ {
-		if strings.HasPrefix(line, number_words[i]) {
-			return i + 1
+	for i := 0; i < len(game_data); i++ {
+		if isPossibleGame(elf_bag, game_data[i]) {
+			id_sum += game_data[i].id
 		}
 	}
 
-	return -1
+	fmt.Printf("Sum of IDs: %d\n", id_sum)
 }
 
-func getCalibrateValue(line string) int {
-	first_digit := -1
-	last_digit := -1
+func isValidSet(bag bag, set cube_set) bool {
+	if bag.red_cubes-set.red_cubes >= 0 && bag.green_cubes-set.green_cubes >= 0 && bag.blue_cubes-set.blue_cubes >= 0 {
+		return true
+	}
 
-	for i := 0; i < len(line); i++ {
-		if unicode.IsDigit(rune(line[i])) {
-			if first_digit == -1 {
-				first_digit = int(line[i]) - '0'
-			} else {
-				last_digit = int(line[i]) - '0'
-			}
-		} else if unicode.IsLetter(rune(line[i])) {
-			if first_digit == -1 {
-				digit := getWordDigit(line[i:])
-				if digit != -1 {
-					first_digit = digit
-				}
-			} else {
-				digit := getWordDigit(line[i:])
-				if digit != -1 {
-					last_digit = digit
-				}
-			}
+	return false
+}
+
+func isPossibleGame(bag bag, game game) bool {
+	for i := 0; i < len(game.sets); i++ {
+		if !isValidSet(bag, game.sets[i]) {
+			return false
 		}
 	}
 
-	if last_digit == -1 {
-		last_digit = first_digit
-	}
-
-	return first_digit*10 + last_digit
+	return true
 }
 
-func parseFile(files []string) []string {
-	var rtnData []string
+func parseCubeValues(line string) cube_set {
+	rtnData := cube_set{0, 0, 0}
+	value_colour_strs := strings.Split(line, ", ")
+
+	for i := 0; i < len(value_colour_strs); i++ {
+		value, err := strconv.Atoi(strings.Split(value_colour_strs[i], " ")[0])
+
+		if err != nil {
+			panic(err)
+		}
+
+		switch strings.Split(value_colour_strs[i], " ")[1] {
+		case "red":
+			rtnData.red_cubes = value
+		case "green":
+			rtnData.green_cubes = value
+		case "blue":
+			rtnData.blue_cubes = value
+		}
+	}
+
+	return rtnData
+}
+
+func parseCubeSets(line string) []cube_set {
+	var rtnData []cube_set
+
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimPrefix(line, " ")
+
+	set_strings := strings.Split(line, ";")
+
+	for i := 0; i < len(set_strings); i++ {
+		temp_str := set_strings[i]
+		temp_str = strings.TrimPrefix(temp_str, " ")
+		new_set := parseCubeValues(temp_str)
+
+		rtnData = append(rtnData, new_set)
+	}
+
+	return rtnData
+}
+
+func parseFile(files []string) []game {
+	var rtnData []game
 
 	for i := 0; i < len(files); i++ {
 		f, err := os.Open(files[i])
@@ -86,9 +124,20 @@ func parseFile(files []string) []string {
 		scanner := bufio.NewScanner(f)
 
 		for scanner.Scan() {
+			var new_game game
 			line := scanner.Text()
 			line = strings.TrimSuffix(line, "\n")
-			rtnData = append(rtnData, line)
+			line = strings.TrimPrefix(line, "Game ")
+
+			new_game.id, err = strconv.Atoi(strings.Split(line, ":")[0])
+
+			if err != nil {
+				panic(err)
+			}
+
+			new_game.sets = parseCubeSets(strings.Split(line, ":")[1])
+
+			rtnData = append(rtnData, new_game)
 		}
 
 		if scanner.Err() != nil {

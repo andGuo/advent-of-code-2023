@@ -30,6 +30,18 @@ func main() {
 	println(sum)
 }
 
+func getWordDigit(line string) int {
+	number_words := []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
+
+	for i := 0; i < len(number_words); i++ {
+		if strings.HasPrefix(line, number_words[i]) {
+			return i + 1
+		}
+	}
+
+	return -1
+}
+
 func getCalibrateValue(line string) int {
 	first_digit := -1
 	last_digit := -1
@@ -40,6 +52,18 @@ func getCalibrateValue(line string) int {
 				first_digit = int(line[i]) - '0'
 			} else {
 				last_digit = int(line[i]) - '0'
+			}
+		} else if unicode.IsLetter(rune(line[i])) {
+			if first_digit == -1 {
+				digit := getWordDigit(line[i:])
+				if digit != -1 {
+					first_digit = digit
+				}
+			} else {
+				digit := getWordDigit(line[i:])
+				if digit != -1 {
+					last_digit = digit
+				}
 			}
 		}
 	}
