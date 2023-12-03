@@ -42,7 +42,7 @@ func main() {
 	schematic_parts := parseEngine(filename)
 	fmt.Println("Engine parts parsed")
 	schematic_gears := parseGears(filename)
-	fmt.Println("Engine symbols parsed")
+	fmt.Println("Engine gears parsed")
 	gear_ratio_sum := 0
 
 	for i := 0; i < schematic_gears.m_rows; i++ {
@@ -57,12 +57,13 @@ func main() {
 		for j := 0; j < schematic_gears.m_cols; j++ {
 			if schematic_gears.data[i][j] != nil && len(schematic_gears.data[i][j].parts) == 2 {
 				gear_ratio := schematic_gears.data[i][j].parts[0].number * schematic_gears.data[i][j].parts[1].number
+				fmt.Printf("Gear Ratio (%d,%d): %d * %d = %d\n", i, j, schematic_gears.data[i][j].parts[0].number, schematic_gears.data[i][j].parts[1].number, gear_ratio)
 				gear_ratio_sum += gear_ratio
 			}
 		}
 	}
 
-	fmt.Printf("Sum of gear ratio: %d\n", gear_ratio_sum)
+	fmt.Printf("Sum of gear ratios: %d\n", gear_ratio_sum)
 }
 
 func contains(s []*part, e *part) bool {
